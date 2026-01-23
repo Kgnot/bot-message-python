@@ -5,6 +5,7 @@ load_dotenv()
 
 class Configuration:
     TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+    WEBHOOK_URL = os.getenv("WEBHOOK_URL")
 
     @classmethod
     def validate(cls):

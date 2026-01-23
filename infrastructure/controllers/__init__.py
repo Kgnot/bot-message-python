@@ -1,1 +1,1 @@
-from .TelegramController import router as telegram_router
+from .TelegramController import telegram_router, fastapi_router
