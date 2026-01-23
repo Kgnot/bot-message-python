@@ -13,7 +13,7 @@ from utils import singleton
 @singleton
 class ConversationManager:
     def __init__(self,):
-        self._store = None
+        self._store:ConversationSessionStore = None
 
     def _validate_store_attached(self):
         # centralizamos el apartado de validación
@@ -31,17 +31,17 @@ class ConversationManager:
         self._store.save(conversation)
         return conversation
 
-    def get(self, conversation_id: uuid.UUID) -> Union[Conversation, None]:
+    def getByUser(self, user: User) -> Union[Conversation, None]:
         self._validate_store_attached()
-        return self._store.get(conversation_id)
+        return self._store.getByUser(user)
 
     def save(self, conversation: Conversation) -> None:
         self._validate_store_attached()
         self._store.save(conversation)
 
-    def delete(self, conversation_id: uuid.UUID) -> None:
+    def deleteByUser(self, user: User) -> None:
         self._validate_store_attached()
-        self._store.delete(conversation_id)
+        self._store.deleteByUser(user)
 
     # apartado de accesibilidad
     @property

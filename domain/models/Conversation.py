@@ -13,8 +13,11 @@ class Conversation:
         self.messages: list[Message] = []
 
     def addMessage(self, message: Message, now: datetime):
+        if self.is_expired(now):
+            return False
         self.messages.append(message)
         self.touch(now)
+        return True
 
     def touch(self, now: datetime):
         self.last_interaction_at = now
