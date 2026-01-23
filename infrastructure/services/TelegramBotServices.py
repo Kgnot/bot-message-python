@@ -3,9 +3,8 @@ from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 
 from infrastructure.config.Configuration import Configuration
+from infrastructure.controllers.telegram.router import telegram_router
 from utils import singleton
-from infrastructure.controllers.TelegramController import telegram_router
-
 
 @singleton
 class TelegramBotServices:
@@ -20,12 +19,6 @@ class TelegramBotServices:
 
         self.dispatcher = Dispatcher()
         self.dispatcher.include_router(telegram_router)
-
-    def get_bot(self) -> Bot:
-        return self.bot
-
-    def get_dispatcher(self) -> Dispatcher:
-        return self.dispatcher
 
     async def startup(self, webhook_url: str):
         await self.bot.set_webhook(webhook_url)
