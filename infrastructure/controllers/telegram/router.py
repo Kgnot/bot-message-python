@@ -1,9 +1,7 @@
 from aiogram import Router
 from aiogram.types import Message
-from datetime import datetime
 
 from application.services import ConversationServiceController
-from domain.models import Conversation
 from infrastructure.mapper import telegram_to_domain_message, telegram_user_mapper
 
 telegram_router = Router()
