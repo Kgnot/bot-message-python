@@ -1,0 +1,6 @@
+from typing import Protocol
+
+
+class ATMDataExtractor(Protocol):
+    async def extract_from_image(self, image_bytes: bytes): ...
+    async def extract_from_text(self, text: str): ...

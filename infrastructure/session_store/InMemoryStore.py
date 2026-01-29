@@ -4,7 +4,7 @@ from typing import Union
 
 from domain.models import Conversation, User
 
-# usa el dominio, el puerto del dominio
+# usa el dominio, el puerto del dominio | ConversationStore
 class InMemoryConversationStore:
     def __init__(self, ttl_seconds: int = 300):
         self.ttl_seconds = ttl_seconds

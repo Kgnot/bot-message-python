@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Request
 from aiogram.types import Update
 
-from infrastructure.bot_services.telegram.TelegramBotServices import TelegramBotServices
+from infrastructure.services.bot_services import TelegramBotServices
 
 fastapi_router = APIRouter()
 

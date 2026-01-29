@@ -1,4 +1,7 @@
-fastapi
-aiogram
-python-dotenv
-redis
+fastapi~=0.128.0
+aiogram~=3.24.0
+python-dotenv~=1.2.1
+redis~=7.1.0
+protobuf~=6.33.4
+Booktype~=1.5
+google-generativeai

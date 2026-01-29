@@ -3,7 +3,8 @@ from fastapi import FastAPI
 
 from infrastructure.config.Configuration import Configuration
 from infrastructure.controllers.telegram.WebhookTelegram import fastapi_router
-from infrastructure.bot_services.telegram.TelegramBotServices import TelegramBotServices
+from infrastructure.services.bot_services import TelegramBotServices
+
 
 bot_service = TelegramBotServices()
 
