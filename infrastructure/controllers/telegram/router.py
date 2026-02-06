@@ -1,9 +1,14 @@
+from datetime import datetime
+
 from aiogram import Router
-from aiogram.types import Message
+from aiogram.types import Message, FSInputFile
+from domain.models import Message as DomainMessage, Conversation, User
 
 from application.services import ConversationServiceController
 from infrastructure.services.ai_services import ATMDataExtractorTelegram
 from infrastructure.mapper import telegram_user_mapper, telegram_to_domain_message
+from infrastructure.services.excel_service.ExcelGenerator import ExcelGenerator
+from infrastructure.utils.utils import merge_json
 
 telegram_router = Router()
 extractor = ATMDataExtractorTelegram()
@@ -12,36 +17,54 @@ conversation_controller = ConversationServiceController()
 
 @telegram_router.message()
 async def handle_message(message: Message):
-    user = telegram_user_mapper(message) # Obtenemos el usuario
-    domain_message = telegram_to_domain_message(message) # Obtenemos el mensaje general
+    user: User = telegram_user_mapper(message)
+    texto_usuario: str = ""
+    # print("Mensaje recibido",message)
 
-    extracted_data = None
-    # Campturamos el texto
-    texto_usuario = message.text or message.caption
+    total_extracted = {}
 
-    # CASO: Imagen (con o sin texto)
     if message.photo:
         photo = message.photo[-1]
-        file_info = await message.bot.get_file(photo.file_id)
-        photo_bytes = await message.bot.download_file(file_info.file_path)
-        img_buffer = photo_bytes.read()
-        # Enviamos ambos a la IA para que use el texto como contexto de la imagen
-        extracted_data = await extractor.extract_from_image(img_buffer, texto_usuario)
-    # CASO: Solo Texto
-    elif texto_usuario:
-        extracted_data = await extractor.extract_from_text(texto_usuario)
+        file = await message.bot.get_file(photo.file_id)
+        photo_bytes = await message.bot.download_file(file.file_path)
+        texto_usuario = message.caption
+        image_data = await extractor.extract_from_image(photo_bytes.read(), texto_usuario)
+        text_data = await extractor.extract_from_text(texto_usuario)
 
-    # Procesamiento del resultado
-    if extracted_data and any(extracted_data.values()):  # Verifica que no sea un JSON de nulls
-        conversation_controller.handle_message(user, extracted_data)
-
-        resp_text = (
-            f"Datos procesados:\n"
-            f"Lugar: {extracted_data.get('lugar') or 'No detectado'}\n"
-            f"Entidad: {extracted_data.get('entidad') or 'No detectado'}\n"
-            f"Código: {extracted_data.get('codCajero') or 'No detectado'}"
-        )
-        await message.reply(resp_text)
+        total_extracted = merge_json(text_data or {}, image_data or {})
+        foto_file_id = photo.file_id
     else:
-        await message.reply(
-            "No detecté información suficiente. Por favor, envía una foto del cajero o el texto con los datos. 🧐")
+        texto_usuario = message.text or ""
+        total_extracted = await extractor.extract_from_text(texto_usuario) or {}
+        foto_file_id = None
+
+    # 1. Mensaje de dominio
+    new_message: DomainMessage = DomainMessage(
+        text=texto_usuario,
+        foto=foto_file_id,
+        created_at=datetime.now(),
+
+        lugarFoto=total_extracted.get("lugarFoto"),
+        estadoBanco=total_extracted.get("estadoBanco"),
+        indice=total_extracted.get("indice"),
+        fecha_foto=total_extracted.get("fecha_foto"),
+        altitud=total_extracted.get("altitud"),
+        velocidad=total_extracted.get("velocidad"),
+        residencia=total_extracted.get("residencia"),
+
+        lugar=total_extracted.get("lugar"),
+        entidad=total_extracted.get("entidad"),
+        codCajero=total_extracted.get("codCajero"),
+    )
+
+    conversation: Conversation = conversation_controller.handle_message(user, new_message)
+
+    excel_path = await ExcelGenerator.create_report(
+        conversation.messages,
+        user.id,
+        message.bot  # 👈 necesario para descargar imágenes
+    )
+
+    await message.reply(
+        f"✅ Registrado: {new_message.estadoBanco} en {new_message.lugar} (Índice: {new_message.indice})"
+    )

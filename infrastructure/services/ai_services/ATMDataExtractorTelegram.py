@@ -14,15 +14,36 @@ class ATMDataExtractorTelegram:
         # definimos el modelo a usar
         self.model_id = "gemini-2.5-flash"
 
+        # infrastructure/services/ai_services.py
         self.prompt = """
-        Eres un experto en visión artificial para banca. 
-        Analiza la imagen o texto y extrae estos datos en JSON:
+        Analiza la imagen de este cajero. Debes extraer información de dos fuentes:
+        1. La apariencia del cajero (logos).
+        2. La marca de agua de texto blanco en la esquina inferior derecha.
+        RESPONDE ÚNICAMENTE CON UN JSON VÁLIDO. NO INCLUYAS EXPLICACIONES NI RUIDO.
+        
+        Extrae este JSON:
         {
-          "lugar": "Nombre del municipio o barrio",
-          "entidad": "Nombre del banco (ej: Bancolombia, Banco de Occidente, etc)",
-          "codCajero": "Busca un código numérico o 'Número de índice'"
+          "lugarFoto": "Nombre municipio (ej: Guatapé)",
+          "estadoBanco": "Aceptable, Bueno, Dañado, Muy Dañado")",
+          "indice": "El número de índice (ej: 4380)",
+          "fecha_foto": "La fecha y hora que aparece la zona inferior derecha de la foto en letras blancas",
+          "altitud": "La altitud que aparece la zona inferior derecha de la foto en letras blancas",
+          "velocidad": "La velocidad (ej: 0.0mi/h) que aparece la zona inferior derecha de la foto en letras blancas ",
+          "residencia": "El lugar de residencia/departamento que aparece bajo el municipio"
         }
-        Responde exclusivamente con el JSON.
+        """
+
+        self.prompt_text = """
+            Analiza el texto y extrae 3 variables lugar, entidad y cajero. Intenta entender que estas variables tengan
+            sentido. 
+            RESPONDE ÚNICAMENTE CON UN JSON VÁLIDO. NO INCLUYAS EXPLICACIONES NI RUIDO.
+            
+            Extrae el JSON: 
+            {
+                "lugar": "El lugar donde se encuentra el cajero (ej: Medellín)",
+                "entidad": "La entidad bancaria del cajero (ej: Bancolombia)",
+                "codCajero": "El código del cajero (ej: 12345)"
+            }
         """
 
     async def extract_from_image(self, image_bytes: bytes, additional_text: str = None):
@@ -48,7 +69,7 @@ class ATMDataExtractorTelegram:
             # Enviamos el prompt seguido del texto del usuario
             response = self.client.models.generate_content(
                 model=self.model_id,
-                contents=[self.prompt, f"Texto del usuario: {text_content}"]
+                contents=[self.prompt_text, f"Texto del usuario: {text_content}"]
             )
             return clean_json(response.text)
         except Exception as e:
